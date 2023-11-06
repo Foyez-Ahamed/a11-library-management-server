@@ -40,6 +40,14 @@ async function run() {
     
     // crud operation //
 
+    // post books //
+    app.post('/books', async(req, res) => {
+        const addBooks = req.body;
+        const result = await booksCollection.insertOne(addBooks);
+        res.send(result);
+      })
+    // post books //
+
     // get booksCategory // 
     app.get('/booksCategory', async(req, res) => {
         const cursor = booksCategoryCollection.find();
