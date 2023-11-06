@@ -15,7 +15,6 @@ app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wslenxe.mongodb.net/?retryWrites=true&w=majority`;
 
-console.log(uri);
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -31,9 +30,19 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
+    
+    // database and collection //
+    const booksCategoryCollection = client.db('libraryManagement').collection('booksCategory');
+    // database and collection //
 
-
-
+    
+    // crud operation //
+    app.get('/booksCategory', async(req, res) => {
+        const cursor = booksCategoryCollection.find();
+        const result = await cursor.toArray();
+        res.send(result);
+    })
+    // crud operation //
 
 
     // Send a ping to confirm a successful connection
