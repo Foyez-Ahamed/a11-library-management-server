@@ -33,15 +33,30 @@ async function run() {
     
     // database and collection //
     const booksCategoryCollection = client.db('libraryManagement').collection('booksCategory');
+
+    const booksCollection = client.db('libraryManagement').collection('books');
     // database and collection //
 
     
     // crud operation //
+
+    // get booksCategory // 
     app.get('/booksCategory', async(req, res) => {
         const cursor = booksCategoryCollection.find();
         const result = await cursor.toArray();
         res.send(result);
     })
+    // get booksCategory // 
+
+    // get all books by category wise //
+    app.get('/books/:category', async(req, res) => {
+        const category = req.params.category;
+        const cursor = booksCollection.find({category : category});
+        const result = await cursor.toArray();
+        res.send(result);
+    })
+   // get all books by category wise //
+
     // crud operation //
 
 
