@@ -35,6 +35,8 @@ async function run() {
     const booksCategoryCollection = client.db('libraryManagement').collection('booksCategory');
 
     const booksCollection = client.db('libraryManagement').collection('books');
+
+    const borrowedBooks = client.db('libraryManagement').collection('borrowedBook');
     // database and collection //
 
     
@@ -55,6 +57,36 @@ async function run() {
         res.send(result);
     })
     // get booksCategory // 
+
+    // get all books //
+    app.get('/allBooks', async(req, res) => {
+      const allBooks = booksCollection.find();
+      const result = await allBooks.toArray();
+      res.send(result);
+    })
+    // get all books //
+
+
+    // update book //
+    app.put('/books/:id', async(req, res) => {
+      const updateBook = req.body;
+      const id = req.params.id;
+      const filter = {_id : new ObjectId(id)};
+      const options = { upsert: true };
+      const updatedBook = {
+        $set: {
+          image : updateBook.image,
+          name : updateBook.name,
+          author : updateBook.author,
+          category : updateBook.category,
+          rating : updateBook.rating
+        }
+      }
+
+      const result = await booksCollection.updateOne(filter, updatedBook, options);
+      res.send(result);
+    })
+    // update book //
 
     // get all books by category wise //
     app.get('/books/:category', async(req, res) => {
