@@ -36,7 +36,7 @@ async function run() {
 
     const booksCollection = client.db('libraryManagement').collection('books');
 
-    const borrowedBooks = client.db('libraryManagement').collection('borrowedBook');
+    const borrowedBooksCollection = client.db('libraryManagement').collection('borrowedBook');
     // database and collection //
 
     
@@ -111,6 +111,31 @@ async function run() {
      res.send(result);
    })
   // get a single book by id //
+
+
+  // post borrowed books //
+   app.post('/borrowedBook', async(req, res) => {
+     const borrowedBooks = req.body;
+     const result = await borrowedBooksCollection.insertOne(borrowedBooks);
+     res.send(result);
+   })
+  // post borrowed books //
+
+  // update books quantity //
+   app.put('/borrowedBook/:id', async(req, res) => {
+    const updateQuantity = req.body;
+    const id = req.params.id;
+      const filter = {_id : new ObjectId(id)};
+      const options = { upsert: true };
+      const updatedQuantity = {
+        $set: {
+          quantity : updateQuantity.quantity
+        }
+      }
+      const result = await booksCollection.updateOne(filter, updatedQuantity, options)
+      res.send(result);
+   })
+  // update books quantity //
 
     // crud operation //
 
