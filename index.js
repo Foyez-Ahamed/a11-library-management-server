@@ -66,6 +66,12 @@ async function run() {
     })
     // get all books //
 
+    app.get('/filterBooks', async(req, res) => {
+      const filterBook = booksCollection.find({quantity : {$ne: 0}});
+      const result = await filterBook.toArray();
+      res.send(result);
+    })
+
 
     // update book //
     app.put('/books/:id', async(req, res) => {
