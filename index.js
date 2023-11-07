@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const cors = require('cors');
 const port = process.env.PORT || 5000;
@@ -64,6 +64,15 @@ async function run() {
         res.send(result);
     })
    // get all books by category wise //
+
+  // get a single book by id //
+   app.get('/singleBook/:id', async(req, res) => {
+     const singleBooks = req.params.id;
+     const query = {_id : new ObjectId(singleBooks)};
+     const result = await booksCollection.findOne(query);
+     res.send(result);
+   })
+  // get a single book by id //
 
     // crud operation //
 
