@@ -1,8 +1,6 @@
 const express = require('express');
 const app = express();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const cors = require('cors');
 const port = process.env.PORT || 5000;
@@ -10,15 +8,13 @@ const port = process.env.PORT || 5000;
 // middleware // 
 app.use(cors({
   origin : [
-    
-    'http://localhost:5173',
-
+    'https://library-management-15e08.web.app',
+    'https://library-management-15e08.firebaseapp.com'
 ],
   credentials:true
 }));
 
 app.use(express.json());
-app.use(cookieParser());
 // middleware // 
 
 
@@ -37,24 +33,10 @@ const client = new MongoClient(uri, {
 });
 
 
-const verifyToken = (req, res, next) => {
-  const token = req?.cookies?.token;
-  if(!token){
-    return res.status(401).send({message : 'unauthorized access'})
-  }
-  jwt.verify(token, process.env.TOKEN_SECRET, (err, decoded) => {
-    if(err){
-      return res.status(401).send({message : 'unauthorized access'})
-    }
-    req.user = decoded;
-    next();
-  })
-}
-
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     
     // database and collection //
@@ -67,31 +49,8 @@ async function run() {
 
     
     // crud operation //
-
-    // auth related api //
-    app.post('/jwt', async(req, res) => {
-      const user = req.body;
-      const token = jwt.sign(user, process.env.TOKEN_SECRET, {expiresIn: '2h'});
-      res
-      .cookie('token', token, {
-        httpOnly: true,
-        secure: true,
-        sameSite : 'none'
-      })
-      .send({success : true});
-    })
-
-    app.post('/logout', async(req, res) => {
-      const user = req.body;
-      console.log('logging out' , user);
-      res
-      .clearCookie('token', {maxAge: 0})
-      .send({success: true})
-    })
-    // auth related api //
-
     // post books //
-    app.post('/books', verifyToken, async(req, res) => {
+    app.post('/books', async(req, res) => {
         const addBooks = req.body;
         const result = await booksCollection.insertOne(addBooks);
         res.send(result);
@@ -107,7 +66,7 @@ async function run() {
     // get booksCategory // 
 
     // get all books //
-    app.get('/allBooks', verifyToken, async(req, res) => {
+    app.get('/allBooks', async(req, res) => {
       console.log('cookie', req.cookies);
       const allBooks = booksCollection.find();
       const result = await allBooks.toArray();
@@ -115,11 +74,11 @@ async function run() {
     })
     // get all books //
 
-    app.get('/filterBooks', verifyToken, async(req, res) => {
+    app.get('/filterBooks', async(req, res) => {
       console.log('cookie', req.cookies);
       const filterBook = booksCollection.find({quantity : {$ne: 0}});
       const result = await filterBook.toArray();
-      res.send(result)
+      res.send(result);
     })
 
 
@@ -185,6 +144,8 @@ async function run() {
       const result = await booksCollection.updateOne(filter, updatedQuantity, options)
       res.send(result);
    })
+
+
   // update books quantity //
 
   // get data by user email //
@@ -207,12 +168,19 @@ async function run() {
   })
   // remove borrowed book //
 
+  // update quantity // 
+  app.get('/increaseQuantity/:bookName',async(req,res)=>{
+    const bookName = req.params.bookName;
+    const result = await booksCollection.findOne({name:bookName })
+    res.send(result)
+  })
+  // update quantity // 
     // crud operation //
 
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
