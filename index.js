@@ -119,7 +119,7 @@ async function run() {
       console.log('cookie', req.cookies);
       const filterBook = booksCollection.find({quantity : {$ne: 0}});
       const result = await filterBook.toArray();
-      res.send(result);
+      res.send(result)
     })
 
 
