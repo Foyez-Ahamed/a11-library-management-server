@@ -1,13 +1,24 @@
 const express = require('express');
 const app = express();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const cors = require('cors');
 const port = process.env.PORT || 5000;
 
 // middleware // 
-app.use(cors());
+app.use(cors({
+  origin : [
+    
+    'http://localhost:5173',
+
+],
+  credentials:true
+}));
+
 app.use(express.json());
+app.use(cookieParser());
 // middleware // 
 
 
@@ -24,6 +35,21 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+
+
+const verifyToken = (req, res, next) => {
+  const token = req?.cookies?.token;
+  if(!token){
+    return res.status(401).send({message : 'unauthorized access'})
+  }
+  jwt.verify(token, process.env.TOKEN_SECRET, (err, decoded) => {
+    if(err){
+      return res.status(401).send({message : 'unauthorized access'})
+    }
+    req.user = decoded;
+    next();
+  })
+}
 
 async function run() {
   try {
@@ -42,8 +68,30 @@ async function run() {
     
     // crud operation //
 
+    // auth related api //
+    app.post('/jwt', async(req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.TOKEN_SECRET, {expiresIn: '2h'});
+      res
+      .cookie('token', token, {
+        httpOnly: true,
+        secure: true,
+        sameSite : 'none'
+      })
+      .send({success : true});
+    })
+
+    app.post('/logout', async(req, res) => {
+      const user = req.body;
+      console.log('logging out' , user);
+      res
+      .clearCookie('token', {maxAge: 0})
+      .send({success: true})
+    })
+    // auth related api //
+
     // post books //
-    app.post('/books', async(req, res) => {
+    app.post('/books', verifyToken, async(req, res) => {
         const addBooks = req.body;
         const result = await booksCollection.insertOne(addBooks);
         res.send(result);
@@ -59,14 +107,16 @@ async function run() {
     // get booksCategory // 
 
     // get all books //
-    app.get('/allBooks', async(req, res) => {
+    app.get('/allBooks', verifyToken, async(req, res) => {
+      console.log('cookie', req.cookies);
       const allBooks = booksCollection.find();
       const result = await allBooks.toArray();
       res.send(result);
     })
     // get all books //
 
-    app.get('/filterBooks', async(req, res) => {
+    app.get('/filterBooks', verifyToken, async(req, res) => {
+      console.log('cookie', req.cookies);
       const filterBook = booksCollection.find({quantity : {$ne: 0}});
       const result = await filterBook.toArray();
       res.send(result);
@@ -136,6 +186,26 @@ async function run() {
       res.send(result);
    })
   // update books quantity //
+
+  // get data by user email //
+  app.get('/borrowedBook', async(req, res) => {
+    let query = {};
+    if(req.query?.email){
+      query = {email : req.query.email}
+    }
+    const result = await borrowedBooksCollection.find(query).toArray();
+    res.send(result);
+  })
+  // get data by user email //
+
+  // remove borrowed book //
+  app.delete('/removeBook/:id', async(req, res) => {
+    const id = req.params.id;
+    const query = {_id : new ObjectId(id)};
+    const result = borrowedBooksCollection.deleteOne(query);
+    res.send(result);
+  })
+  // remove borrowed book //
 
     // crud operation //
 
