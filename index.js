@@ -38,13 +38,12 @@ async function run() {
 
     
     
-    app.post('/books', async(req, res) => {
+    app.post('/createBooks', async(req, res) => {
         const addBooks = req.body;
         const result = await booksCollection.insertOne(addBooks);
         res.send(result);
       })
    
-
     
     app.get('/booksCategory', async(req, res) => {
         const cursor = booksCategoryCollection.find();
@@ -112,8 +111,25 @@ async function run() {
 
    app.post('/createBorrowedBook', async(req, res) => {
      const borrowedBooks = req.body;
+
+    //  console.log(borrowedBooks);
+
+     const existingBorrowedBook = await borrowedBooksCollection.findOne({ email : borrowedBooks.email})
+
+    //  console.log(existingBorrowedBook);
+
+     if(existingBorrowedBook) {
+      return res.send({
+        message: "You have already borrowed a book",
+        insertedId: null,
+      });
+     }
+
+     
+
      const result = await borrowedBooksCollection.insertOne(borrowedBooks);
      res.send(result);
+
    })
 
 
