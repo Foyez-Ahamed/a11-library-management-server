@@ -6,13 +6,7 @@ const cors = require('cors');
 const port = process.env.PORT || 5000;
 
 
-app.use(cors({
-  origin : [
-    'https://library-management-15e08.web.app',
-    'https://library-management-15e08.firebaseapp.com'
-],
-  credentials:true
-}));
+app.use(cors());
 
 app.use(express.json());
 
@@ -33,7 +27,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
+    await client.connect();
     
     const booksCategoryCollection = client.db('libraryManagement').collection('booksCategory');
 
@@ -114,40 +108,78 @@ async function run() {
   
 
 
- 
-   app.post('/borrowedBook', async(req, res) => {
+//  .................//
+
+   app.post('/createBorrowedBook', async(req, res) => {
      const borrowedBooks = req.body;
      const result = await borrowedBooksCollection.insertOne(borrowedBooks);
      res.send(result);
    })
+
+
+   app.patch('/updateBookQuantity/:bookId', async(req, res) => {
+    const bookId = req.params.bookId
+    const updateQuantity = await booksCollection.findOne({_id : new ObjectId(bookId)})
+
+    const newQuantity = updateQuantity.quantity - 1;
+
+    const updateDoc = {
+      $set : {
+        quantity : newQuantity
+      }
+    }
+
+    const result = await booksCollection.updateOne({_id : new ObjectId(bookId)}, updateDoc)
+
+    const book = await booksCollection.findOne({_id : new ObjectId(bookId)})
+
+    res.send({result, book});
+
+   })
+
+  //  .............///
   
 
  
-   app.put('/borrowedBook/:id', async(req, res) => {
-    const updateQuantity = req.body;
-    const id = req.params.id;
-      const filter = {_id : new ObjectId(id)};
-      const options = { upsert: true };
-      const updatedQuantity = {
-        $set: {
-          quantity : updateQuantity.quantity
-        }
-      }
-      const result = await booksCollection.updateOne(filter, updatedQuantity, options)
-      res.send(result);
-   })
+  //  app.put('/borrowedBook/:id', async(req, res) => {
+  //   const updateQuantity = req.body;
+  //   const id = req.params.id;
+  //     const filter = {_id : new ObjectId(id)};
+  //     const options = { upsert: true };
+  //     const updatedQuantity = {
+  //       $set: {
+  //         quantity : updateQuantity.quantity
+  //       }
+  //     }
+  //     const result = await booksCollection.updateOne(filter, updatedQuantity, options)
+  //     res.send(result);
+  //  })
 
 
   
 
   
-  app.get('/borrowedBook', async(req, res) => {
-    let query = {};
-    if(req.query?.email){
-      query = {email : req.query.email}
-    }
-    const result = await borrowedBooksCollection.find(query).toArray();
-    res.send(result);
+  // app.get('/borrowedBook', async(req, res) => {
+
+  //   let query = {};
+  //   if(req.query?.email){
+  //     query = {email : req.query.email}
+  //   }
+  //   const result = await borrowedBooksCollection.find(query).toArray();
+  //   res.send(result);
+
+  // })
+
+ 
+  app.get('/getBorrowedBook/:email', async(req, res) => {
+
+     const email = req.params.email 
+     const query = {email : email}
+
+     const result = await borrowedBooksCollection.find(query).toArray();
+
+     res.send(result);
+
   })
   
 
@@ -155,23 +187,42 @@ async function run() {
   app.delete('/removeBook/:id', async(req, res) => {
     const id = req.params.id;
     const query = {_id : new ObjectId(id)};
-    const result = borrowedBooksCollection.deleteOne(query);
+    const result = await borrowedBooksCollection.deleteOne(query);
     res.send(result);
   })
-  
 
- 
-  app.get('/increaseQuantity/:bookName',async(req,res)=>{
-    const bookName = req.params.bookName;
-    const result = await booksCollection.findOne({name:bookName })
-    res.send(result)
-  })
+  app.patch('/increaseBookQuantity/:bookId', async(req, res) => {
+    const bookId = req.params.bookId
+    const increaseQuantity = await booksCollection.findOne({_id : new ObjectId(bookId)})
+
+    const newIncrease = increaseQuantity.quantity + 1;
+
+    const updateDoc = {
+      $set : {
+        quantity : newIncrease
+      }
+    }
+
+    const result = await booksCollection.updateOne({_id : new ObjectId(bookId)}, updateDoc)
+
+    res.send(result);
+
+   })
+
+
+
+
+  // app.get('/increaseQuantity/:bookName',async(req,res)=>{
+  //   const bookName = req.params.bookName;
+  //   const result = await booksCollection.findOne({name:bookName })
+  //   res.send(result)
+  // })
   
 
 
     // Send a ping to confirm a successful connection
-    // await client.db("admin").command({ ping: 1 });
-    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    await client.db("admin").command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
