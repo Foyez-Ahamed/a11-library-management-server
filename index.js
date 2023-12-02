@@ -114,7 +114,7 @@ async function run() {
 
     //  console.log(borrowedBooks);
 
-     const existingBorrowedBook = await borrowedBooksCollection.findOne({ email : borrowedBooks.email})
+     const existingBorrowedBook = await borrowedBooksCollection.findOne({ email : borrowedBooks.email, bookId: borrowedBooks.bookId})
 
     //  console.log(existingBorrowedBook);
 
