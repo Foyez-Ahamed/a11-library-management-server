@@ -2,12 +2,12 @@ const express = require('express');
 const app = express();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
+const jwt = require("jsonwebtoken");
 const cors = require('cors');
 const port = process.env.PORT || 5000;
 
 
 app.use(cors());
-
 app.use(express.json());
 
 
@@ -37,8 +37,33 @@ async function run() {
     const booksCollection = client.db('libraryManagement').collection('books');
 
     const borrowedBooksCollection = client.db('libraryManagement').collection('borrowedBook');
-    
 
+    const reviewsCollection = client.db('libraryManagement').collection('reviews');
+    
+    // jwt related api 
+
+    const verifyToken = (req, res, next) => {
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: "unauthorized access" });
+      }
+      const token = req.headers.authorization.split(" ")[1];
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+          return res.status(401).send({ message: "unauthorized access" });
+        }
+        req.decoded = decoded;
+        next();
+      });
+    };
+
+    app.post("/api/v1/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "4h",
+      });
+      res.send({ token });
+    });
+    // jwt related api 
     
     app.post("/createUser", async (req, res) => {
       const users = req.body;
@@ -52,7 +77,7 @@ async function run() {
     });
 
     
-    app.post('/createBooks', async(req, res) => {
+    app.post('/createBooks', verifyToken, async(req, res) => {
         const addBooks = req.body;
         const result = await booksCollection.insertOne(addBooks);
         res.send(result);
@@ -82,7 +107,7 @@ async function run() {
 
 
     
-    app.put('/books/:id', async(req, res) => {
+    app.put('/books/:id', verifyToken, async(req, res) => {
       const updateBook = req.body;
       const id = req.params.id;
       const filter = {_id : new ObjectId(id)};
@@ -237,6 +262,12 @@ async function run() {
 
     res.send(result);
 
+   })
+
+   app.get('/reviews', async(req, res) => {
+     const reviews = reviewsCollection.find();
+     const result = await reviews.toArray();
+     res.send(result);
    })
 
 
